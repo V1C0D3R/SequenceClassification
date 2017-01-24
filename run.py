@@ -35,3 +35,5 @@ for i, name in enumerate(row_names):
     output_file.write(name + "," + predictions[i] + "\n")
 
 output_file.close()
+
+print("Done.")

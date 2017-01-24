@@ -19,6 +19,7 @@ class GameClassifier(object):
         self.classifier = RandomForestClassifier(n_estimators=nb_estimators)
         print("Random Forest classifier initialized")
 
+    # Learning
     def learn(self, features, names):
         print("Learning...")
         # Fit regression model
@@ -32,10 +33,34 @@ class GameClassifier(object):
         # Fit regression model
         self.classifier = self.classifier.fit(features, np.ravel(names))
 
+    # Predicting
     def predict(self, test_features):
         print("Predicting...")
         return self.classifier.predict(test_features)
 
+    # Features
+    def get_velocity_feature(row):
+        pass
+
+    def get_actions_count_feature(row, all_actions):
+        actions_count_features = list()
+        # nb_of_actions is the number of actions * 2 but no need to do extra computations to get real number of actions
+        nb_of_actions = len(row) - 1
+        for action in all_actions:
+            count = row.count(action)
+            if nb_of_actions > 0 :
+                actions_count_features.append(row.count(action))
+            else:
+                actions_count_features.append(0)
+        return actions_count_features
+
+    def get_row_position_feature(row_position, nb_lines):
+        return row_position / (nb_lines)
+
+    def get_race_feature(row):
+        return Race.race_from_string(row[0].split(";")[1])
+
+    # Getting data
     def get_training_data(training_file_path, all_actions, skip_header):
         print("Getting training data...")
         nb_features = len(all_actions)+2
@@ -44,8 +69,8 @@ class GameClassifier(object):
 
         training_file = open(training_file_path, 'r')
 
-        num_lines = len(training_file.readlines())
-        print("Number of lines : " + str(num_lines))
+        nb_lines = len(training_file.readlines())
+        print("Number of lines : " + str(nb_lines))
         training_file.seek(0)
 
         reader = csv.reader(training_file)
@@ -56,22 +81,15 @@ class GameClassifier(object):
             classes = np.append(classes, [[row[0].split(";")[0]]], axis=0)
 
             # Actions count
-            feature_row_count = list()
-            nb_of_actions = len(row) - 1
-            for action in all_actions:
-                count = row.count(action)
-                if nb_of_actions > 0 :
-                    feature_row_count.append(row.count(action))
-                else:
-                    feature_row_count.append(0)
+            actions_count_features = GameClassifier.get_actions_count_feature(row, all_actions)
 
             # Row position
-            rowPosition = reader.line_num / (num_lines)
+            rowPosition = GameClassifier.get_row_position_feature(reader.line_num, nb_lines)
 
             # Race feature
-            race = Race.race_from_string(row[0].split(";")[1])
+            race = GameClassifier.get_race_feature(row)
 
-            line_features = [feature_row_count + [rowPosition, race.value]]
+            line_features = [actions_count_features + [rowPosition, race.value]]
             features = np.append(features, line_features, axis=0)
 
         training_file.close()
@@ -84,8 +102,8 @@ class GameClassifier(object):
 
         testing_file = open(testing_file_path, 'r')
 
-        num_lines = len(testing_file.readlines())
-        print("Number of lines : " + str(num_lines))
+        nb_lines = len(testing_file.readlines())
+        print("Number of lines : " + str(nb_lines))
         testing_file.seek(0)
 
         reader = csv.reader(testing_file)
@@ -97,17 +115,15 @@ class GameClassifier(object):
             row_names.append(row[0].split(";")[0])
 
             # Actions count
-            feature_row_count = list()
-            for action in all_actions:
-                feature_row_count.append(row.count(action))
+            actions_count_features = GameClassifier.get_actions_count_feature(row, all_actions)
 
             # Row position
-            rowPosition = reader.line_num / (num_lines)
+            rowPosition = GameClassifier.get_row_position_feature(reader.line_num, nb_lines)
 
             # Race feature
-            race = Race.race_from_string(row[0].split(";")[1])
+            race = GameClassifier.get_race_feature(row)
 
-            line_features = [feature_row_count + [rowPosition, race.value]]
+            line_features = [actions_count_features + [rowPosition, race.value]]
             test_features = np.append(test_features, line_features, axis=0)
 
         testing_file.close()
