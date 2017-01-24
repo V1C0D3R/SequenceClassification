@@ -22,7 +22,7 @@ gc = GameClassifier()
 players, features = GameClassifier.get_training_data(training_file_path, all_actions, True)
 
 # Choose classifier and learn
-gc.init_decision_tree_classifier()
+gc.init_random_forest_classifier(len(all_actions))
 gc.learn(features, players)
 
 row_names, test_features = GameClassifier.get_testing_data(testing_file_path, all_actions, True)
